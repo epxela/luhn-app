@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Luhn Validator</title>
+</head>
+<body>
+  <h1>Validador Luhn</h1>
+  <input id="number" placeholder="Ingresa número">
+  <button onclick="validar()">Validar</button>
+  <p id="resultado"></p>
+
+<script>
+async function validar(){
+  const num = document.getElementById('number').value;
+  const res = await fetch('/api/validate',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({number:num})
+  });
+  const data = await res.json();
+  document.getElementById('resultado').innerText =
+    data.valid ? 'Válido' : 'Inválido';
+}
+</script>
+
+</body>
+</html>
