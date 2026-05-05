@@ -1,26 +1,157 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-  <title>Luhn Validator</title>
+  <meta charset="UTF-8">
+  <title>Validador Luhn</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      margin: 0;
+      padding: 30px;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    .contenedor {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 500px;
+      margin-bottom: 20px;
+    }
+
+    input[type="text"] {
+      padding: 8px;
+      font-size: 16px;
+      width: 280px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    button {
+      padding: 8px 16px;
+      font-size: 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-left: 8px;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    #resultado {
+      margin-top: 15px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .valido   { color: green; }
+    .invalido { color: red; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+  </style>
 </head>
 <body>
+
   <h1>Validador Luhn</h1>
-  <input id="number" placeholder="Ingresa número">
-  <button onclick="validar()">Validar</button>
-  <p id="resultado"></p>
+
+  <div class="contenedor">
+    <label for="numero"><b>Ingresa un número:</b></label><br><br>
+    <input type="text" id="numero" placeholder="Ej: 4532015112830366">
+    <button onclick="validar()">Validar</button>
+    <p id="resultado"></p>
+  </div>
+
+  <div class="contenedor">
+    <h2>Últimos 10 números probados</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Número</th>
+          <th>Resultado</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody id="historial">
+        <tr><td colspan="3">Sin registros aún</td></tr>
+      </tbody>
+    </table>
+  </div>
 
 <script>
-async function validar(){
-  const num = document.getElementById('number').value;
-  const res = await fetch('/api/validate',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({number:num})
-  });
-  const data = await res.json();
-  document.getElementById('resultado').innerText =
-    data.valid ? 'Válido' : 'Inválido';
-}
+  async function validar() {
+    var num = document.getElementById('numero').value;
+    if (!num) return;
+
+    var res = await fetch('/api/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ number: num })
+    });
+    var data = await res.json();
+
+    var resultado = document.getElementById('resultado');
+    if (data.valid) {
+      resultado.textContent = '✔ Número válido';
+      resultado.className = 'valido';
+    } else {
+      resultado.textContent = '✘ Número inválido';
+      resultado.className = 'invalido';
+    }
+
+    cargarHistorial();
+  }
+
+  async function cargarHistorial() {
+    var res = await fetch('/api/history');
+    var rows = await res.json();
+    var tbody = document.getElementById('historial');
+
+    if (rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3">Sin registros aún</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = '';
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      var fecha = new Date(r.created_at).toLocaleString('es');
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + r.number + '</td>'
+        + '<td style="color:' + (r.valid ? 'green' : 'red') + '">'
+        + (r.valid ? 'Válido' : 'Inválido') + '</td>'
+        + '<td>' + fecha + '</td>';
+      tbody.appendChild(tr);
+    }
+  }
+
+  cargarHistorial();
 </script>
 
 </body>

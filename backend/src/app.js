@@ -31,9 +31,10 @@ async function waitForDb() {
 
 async function initDb() {
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS validated_numbers (
+    CREATE TABLE IF NOT EXISTS validations (
       id SERIAL PRIMARY KEY,
-      number VARCHAR(64) UNIQUE,
+      number VARCHAR(64),
+      valid BOOLEAN,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
@@ -49,14 +50,19 @@ app.post('/validate', async (req, res) => {
 
   const valid = isValidLuhn(number);
 
-  if (valid) {
-    await pool.query(
-      'INSERT INTO validated_numbers(number) VALUES($1) ON CONFLICT DO NOTHING',
-      [number]
-    );
-  }
+  await pool.query(
+    'INSERT INTO validations(number, valid) VALUES($1, $2)',
+    [number, valid]
+  );
 
   res.json({ valid });
+});
+
+app.get('/history', async (req, res) => {
+  const result = await pool.query(
+    'SELECT number, valid, created_at FROM validations ORDER BY created_at DESC LIMIT 10'
+  );
+  res.json(result.rows);
 });
 
 (async () => {
